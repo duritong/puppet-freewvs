@@ -1,0 +1,95 @@
+#!/usr/bin/env ruby
+# encoding: UTF-8
+
+HOST_TEMPLATE =<<-EOF
+Hallo admins von $host
+
+Wir haben auf eurer Website folgende Skripts mit Sicherheitslücken gefunden:
+
+EOF
+
+FOLDER_TEMPLATE =<<-EOF
+* das Verzeichnis $folder gehört zu der veralteten Version $version von $appname,
+welche unter anderem die Sicherheitslücke $cve enthält.
+EOF
+
+FOOTER_TEMPLATE =<<-EOF
+
+Bitte aktualisiert die oben aufgeführten Installationen auf die neuste Version,
+oder löscht das Verzeichnis, falls ihr es nicht mehr braucht.
+
+Merci für eure Mithilfe
+EOF
+
+HOST_EN_TEMPLATE =<<-EOF
+Hi admins of $host
+
+We found the following scripts with security vulnerabilities on your website:
+
+EOF
+
+FOLDER_EN_TEMPLATE =<<-EOF
+* The folder $folder is part of the outdated version $version of $appname,
+which at least is affected by security issue $cve.
+EOF
+
+FOOTER_EN_TEMPLATE =<<-EOF
+
+Please update thoese installations to the newest version.
+Or delete the folders if you don't need them anymore.
+
+Thanks for your help
+EOF
+
+DIR = File.dirname(__FILE__)
+
+result = `#{DIR}/freewvs/freewvs -x /var/www/`
+entries = {}
+
+begin
+  result =~ /<app state="vulnerable">(.+?)<\/app>(.*)/m
+  entry  = $1
+  result = $2
+  entry  =~ /<directory>(.+)<\/directory>/
+  dir    = $1
+  host   = dir.split("/")[4]
+  dir   = dir.split("/")[5..-1].join("/")
+  entries[host]    ||= {}
+  entries[host][dir] = {}
+  entry  =~ /<appname>(.+)<\/appname>/
+  entries[host][dir][:app] = $1
+  entry  =~ /<version>(.+)<\/version>/
+  entries[host][dir][:version] = $1
+  entry  =~ /<safeversion>(.+)<\/safeversion>/
+  entries[host][dir][:safe_version] = $1
+  entry  =~ /<vulninfo>(.+)<\/vulninfo>/
+  entries[host][dir][:cve] = $1
+end while result =~ /<app/
+
+
+entries.each do |host,folders|
+  text    = HOST_TEMPLATE.gsub('$host',host)
+  text_en = HOST_EN_TEMPLATE.gsub('$host',host)
+  folders.each do |folder,info|
+    text    += FOLDER_TEMPLATE.gsub('$folder',folder)
+    text_en += FOLDER_EN_TEMPLATE.gsub('$folder',folder)
+    text.gsub!('$version',info[:version])
+    text.gsub!('$appname',info[:app])
+    text.gsub!('$cve',info[:cve])
+    text_en.gsub!('$version',info[:version])
+    text_en.gsub!('$appname',info[:app])
+    text_en.gsub!('$cve',info[:cve])
+  end
+  text    += FOOTER_TEMPLATE
+  text_en += FOOTER_EN_TEMPLATE
+
+  mail = "security@#{host}"
+  text = "#{text}\n-------------------\n#{text_en}"
+
+  `sendmail -f admin@immerda.ch #{mail} <<EOF
+Subject: Security Scan
+Content-Type: text/plain; charset=UTF-8
+
+#{text}
+EOF`
+end
