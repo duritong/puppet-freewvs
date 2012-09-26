@@ -26,7 +26,7 @@ class freewvs(
         source  => $freewvs::template_src,
         owner   => root, group => root, mode => 0600;
     } 
-    #File["/etc/cron.d/freewvs_run"]{
-    #  content => "1 * * * * root ${freewvs::install_location}/freewvs_check /\n",
-    #}
+    File["/etc/cron.d/freewvs_run"]{
+      content => "14 3 * * * root ${freewvs::install_location}/freewvs_check /\n",
+    }
 }
