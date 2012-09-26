@@ -18,6 +18,8 @@ FOOTER_EN_TEMPLATE =<<-EOF
 Please update thoese installations to the newest version.
 EOF
 
+SENDER = 'root'
+
 DIR = File.dirname(__FILE__)
 
 load "#{DIR}/freewvs_check.conf"
@@ -65,7 +67,7 @@ entries.each do |host,folders|
   mail = "security@#{host}"
   text = "#{text}\n-------------------\n#{text_en}"
 
-  `sendmail -f admin@immerda.ch #{mail} <<EOF
+  `sendmail -f #{SENDER} #{mail} <<EOF
 Subject: Security Scan
 Content-Type: text/plain; charset=UTF-8
 
