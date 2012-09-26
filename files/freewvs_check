@@ -19,8 +19,6 @@ DIR = File.dirname(__FILE__)
 result = `#{DIR}/freewvs/freewvs -x /var/www/`
 entries = {}
 
-MAILMAPPING ||= {}
-
 begin
   result =~ /<app state="vulnerable">(.+?)<\/app>(.*)/m
   entry  = $1
