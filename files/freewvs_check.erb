@@ -1,0 +1,32 @@
+Subject: Security Scan
+Content-Type: text/plain; charset=UTF-8
+
+Hallo admins von <%= @host %>
+
+Wir haben auf eurer Website folgende Skripts mit Sicherheitslücken gefunden:
+
+<% @folders.each do |folder,info| %>
+  * Das Verzeichnis <%= folder %> gehört zu der veralteten Version <%= info[:version] %> 
+    von <%= info[:app] %>, welche unter anderem die Sicherheitslücke <%= info[:cve] %> enthält.
+<% end %>
+
+Bitte aktualisiert die oben aufgeführten Installationen auf die neuste Version,
+oder löscht das Verzeichnis, falls ihr es nicht mehr braucht.
+
+Merci für eure Mithilfe
+
+---------------------------------------------------------------------------------
+
+Hi admins of <%= @host %>
+
+We found the following scripts with security vulnerabilities on your website:
+
+<% @folders.each do |folder,info| %>
+  * The folder <%= folder %> is part of the outdated version <%= info[:version] %> 
+    of <%= info[:app] %> which at least is affected by security issue <%= info[:cve] %>.
+<% end %>
+
+Please update thoese installations to the newest version.
+Or delete the folders if you don't need them anymore.
+
+Thanks for your help

@@ -1,8 +1,10 @@
 #!/usr/bin/env ruby
 
-DIR = File.dirname(__FILE__)
+require 'erb'
 
-load "#{DIR}/freewvs_check.conf"
+load "/etc/freewvs/freewvs_check.conf"
+
+DIR = File.dirname(__FILE__)
 
 result = `#{DIR}/freewvs/freewvs -x /var/www/`
 entries = {}
@@ -29,33 +31,23 @@ begin
   entries[host][dir][:cve] = $1
 end while result =~ /<app/
 
+template = File.read('/etc/freewvs/freewvs_check.erb')
 
 entries.each do |host,folders|
-  text    = HOST_TEMPLATE.gsub('$host',host)
-  text_en = HOST_EN_TEMPLATE.gsub('$host',host)
-  folders.each do |folder,info|
-    text    += FOLDER_TEMPLATE.gsub('$folder',folder)
-    text_en += FOLDER_EN_TEMPLATE.gsub('$folder',folder)
-    text.gsub!('$version',info[:version])
-    text.gsub!('$appname',info[:app])
-    text.gsub!('$cve',info[:cve])
-    text_en.gsub!('$version',info[:version])
-    text_en.gsub!('$appname',info[:app])
-    text_en.gsub!('$cve',info[:cve])
-  end
-  text    += FOOTER_TEMPLATE
-  text_en += FOOTER_EN_TEMPLATE
+  renderer = ERB.new(template)
+  @host    = host
+  @folders = folders
 
-  domain = host.split(".")[-2..-1].join(".")
-  mail   = MAILMAPPING[host]
-  mail ||= MAILMAPPING[domain]
-  mail ||= "security@#{domain}"
-  text   = "#{text}\n-------------------\n#{text_en}"
+  domain   = MAILMAPPING[host]
+  if hostpart.size > 1
+    domain ||= hostpart[-2..-1].join(".")
+  else
+    domain ||= host
+  end
+  mail     = "security@#{domain}"
+  text     = renderer.result()
 
   `sendmail -f #{SENDER} #{mail} <<EOF
-Subject: #{SUBJECT}
-Content-Type: text/plain; charset=UTF-8
-
 #{text}
 EOF`
 end
