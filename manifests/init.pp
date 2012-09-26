@@ -20,11 +20,11 @@ class freewvs(
       "/etc/freewvs/freewvs_check.conf":
         ensure  => file,
         source  => $freewvs::config_src,
-        owner   => root, group => root, mode => 0700;
+        owner   => root, group => root, mode => 0400;
       "/etc/freewvs/freewvs_check.erb":
         ensure  => file,
         source  => $freewvs::template_src,
-        owner   => root, group => root, mode => 0700;
+        owner   => root, group => root, mode => 0400;
     } 
     #File["/etc/cron.d/freewvs_run"]{
     #  content => "1 * * * * root ${freewvs::install_location}/freewvs_check /\n",
