@@ -1,24 +1,4 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
-
-HOST_TEMPLATE =<<-EOF
-EOF
-FOLDER_TEMPLATE =<<-EOF
-EOF
-FOOTER_TEMPLATE =<<-EOF
-EOF
-HOST_EN_TEMPLATE =<<-EOF
-Hi $host
-EOF
-FOLDER_EN_TEMPLATE =<<-EOF
-* The folder $folder is part of the outdated version $version of $appname,
-which at least is affected by security issue $cve.
-EOF
-FOOTER_EN_TEMPLATE =<<-EOF
-Please update thoese installations to the newest version.
-EOF
-
-SENDER = 'root'
 
 DIR = File.dirname(__FILE__)
 
