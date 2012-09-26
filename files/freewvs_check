@@ -2,46 +2,25 @@
 # encoding: UTF-8
 
 HOST_TEMPLATE =<<-EOF
-Hallo admins von $host
-
-Wir haben auf eurer Website folgende Skripts mit Sicherheitslücken gefunden:
-
 EOF
-
 FOLDER_TEMPLATE =<<-EOF
-* das Verzeichnis $folder gehört zu der veralteten Version $version von $appname,
-welche unter anderem die Sicherheitslücke $cve enthält.
 EOF
-
 FOOTER_TEMPLATE =<<-EOF
-
-Bitte aktualisiert die oben aufgeführten Installationen auf die neuste Version,
-oder löscht das Verzeichnis, falls ihr es nicht mehr braucht.
-
-Merci für eure Mithilfe
 EOF
-
 HOST_EN_TEMPLATE =<<-EOF
-Hi admins of $host
-
-We found the following scripts with security vulnerabilities on your website:
-
+Hi $host
 EOF
-
 FOLDER_EN_TEMPLATE =<<-EOF
 * The folder $folder is part of the outdated version $version of $appname,
 which at least is affected by security issue $cve.
 EOF
-
 FOOTER_EN_TEMPLATE =<<-EOF
-
 Please update thoese installations to the newest version.
-Or delete the folders if you don't need them anymore.
-
-Thanks for your help
 EOF
 
 DIR = File.dirname(__FILE__)
+
+load "#{DIR}/freewvs_check.conf"
 
 result = `#{DIR}/freewvs/freewvs -x /var/www/`
 entries = {}
