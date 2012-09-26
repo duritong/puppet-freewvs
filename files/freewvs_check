@@ -5,7 +5,7 @@ require 'yaml'
 
 load "/etc/freewvs/freewvs_check.conf"
 
-db_file = "/tmp/freewvs_check.db"
+db_file = "/var/local/freewvs_check.db"
 
 if File.exists?(db_file)
   db = YAML::load(File.read(db_file))
@@ -73,6 +73,6 @@ entries.each do |host,folders|
 EOF`
 end
 
-f = File.open(db_file,'w')
+f = File.open(db_file,'w',0600)
 f.write(db.to_yaml)
 f.close
