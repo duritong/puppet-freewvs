@@ -10,7 +10,7 @@ class freewvs(
     file{
       "${install_location}/freewvs_check":
         ensure => file,
-        source => 'puppet:///modules/site_freewvs/freewvs_check',
+        source => 'puppet:///modules/freewvs/freewvs_check',
         owner => root, group => root, mode => 0700;
     } 
     #File["/etc/cron.d/freewvs_run"]{
