@@ -63,12 +63,12 @@ entries.each do |host,folders|
   else
     domain ||= host
   end
-  mail     = "security@#{domain}"
+  @mail    = "security@#{domain}"
   
   renderer = ERB.new(template)
   text     = renderer.result()
 
-  `sendmail -f #{SENDER} #{mail} <<EOF
+  `sendmail -f #{SENDER} #{@mail} <<EOF
 #{text}
 EOF`
 end
