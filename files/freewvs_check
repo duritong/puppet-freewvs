@@ -1,8 +1,18 @@
 #!/usr/bin/env ruby
 
 require 'erb'
+require 'yaml'
 
 load "/etc/freewvs/freewvs_check.conf"
+
+db_file = "/tmp/freewvs_check.db"
+
+if File.exists?(db_file)
+  db = YAML::load(File.read(db_file))
+else
+  db = {}
+end
+
 
 DIR = File.dirname(__FILE__)
 
@@ -34,20 +44,37 @@ end while result =~ /<app/
 template = File.read('/etc/freewvs/freewvs_check.erb')
 
 entries.each do |host,folders|
-  renderer = ERB.new(template)
+  if db[host]
+    if (db[host][:lastreport] && Time.now - db[host][:lastreport] < REPORT_TIME) &&
+       (db[host][:reportsize] && db[host][:reportsize] == folders.size)
+      next
+    end
+  end
+
+  db[host] ||= {}
+  db[host][:lastreport] = Time.now
+  db[host][:reportsize] = folders.size
+
   @host    = host
   @folders = folders
 
   domain   = MAILMAPPING[host]
+  hostpart = host.split(".")
   if hostpart.size > 1
     domain ||= hostpart[-2..-1].join(".")
   else
     domain ||= host
   end
   mail     = "security@#{domain}"
+  
+  renderer = ERB.new(template)
   text     = renderer.result()
 
   `sendmail -f #{SENDER} #{mail} <<EOF
 #{text}
 EOF`
 end
+
+f = File.open(db_file,'w')
+f.write(db.to_yaml)
+f.close
