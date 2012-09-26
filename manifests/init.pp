@@ -1,12 +1,13 @@
-define freewvs::instance(
+class freewvs(
   $install_location = '/var/local'
 ){
+    git::clone{"git_clone_freewvs":
+      git_repo => 'git://git.immerda.ch/ifreewvs',
+      projectroot => "${install_location}/freewvs",
+      cloneddir_user => 'root',
+      cloneddir_group => 'root',
+    }
     file{
-      "${install_location}/freewvs":
-        ensure => directory,
-        source => 'puppet:///modules/site_freewvs/freewvs',
-        owner => 'root', group => $name, mode => 0400,
-        recurse => true;
       "${install_location}/freewvs_check":
         ensure => file,
         source => 'puppet:///modules/site_freewvs/freewvs_check',

@@ -1,3 +1,0 @@
-class freewvs::base(
-){
-}
