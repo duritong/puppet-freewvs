@@ -7,6 +7,8 @@ load "#{DIR}/freewvs_check.conf"
 result = `#{DIR}/freewvs/freewvs -x /var/www/`
 entries = {}
 
+MAILMAPPING ||= {}
+
 begin
   result =~ /<app state="vulnerable">(.+?)<\/app>(.*)/m
   entry  = $1
@@ -44,8 +46,11 @@ entries.each do |host,folders|
   text    += FOOTER_TEMPLATE
   text_en += FOOTER_EN_TEMPLATE
 
-  mail = "security@#{host}"
-  text = "#{text}\n-------------------\n#{text_en}"
+  domain = host.split(".")[-2..-1].join(".")
+  mail   = MAILMAPPING[host]
+  mail ||= MAILMAPPING[domain]
+  mail ||= "security@#{domain}"
+  text   = "#{text}\n-------------------\n#{text_en}"
 
   `sendmail -f #{SENDER} #{mail} <<EOF
 Subject: #{SUBJECT}
