@@ -48,7 +48,7 @@ entries.each do |host,folders|
   text = "#{text}\n-------------------\n#{text_en}"
 
   `sendmail -f #{SENDER} #{mail} <<EOF
-Subject: Security Scan
+Subject: #{SUBJECT}
 Content-Type: text/plain; charset=UTF-8
 
 #{text}
