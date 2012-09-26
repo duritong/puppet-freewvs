@@ -16,7 +16,7 @@ end
 
 DIR = File.dirname(__FILE__)
 
-result = `#{DIR}/freewvs/freewvs -x /var/www/`
+result = `#{DIR}/freewvs/freewvs -x /var/www/vhosts/`
 entries = {}
 
 begin
