@@ -28,6 +28,6 @@ class freewvs(
       "/etc/cron.d/freewvs_run":;
     } 
     File["/etc/cron.d/freewvs_run"]{
-      content => "14 3 * * * root ${freewvs::install_location}/freewvs_check /\n",
+      content => "14 3 * * * root ${freewvs::install_location}/freewvs_check\n",
     }
 }

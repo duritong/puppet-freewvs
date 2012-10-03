@@ -68,7 +68,7 @@ entries.each do |host,folders|
   renderer = ERB.new(template)
   text     = renderer.result()
 
-  `sendmail -f #{SENDER} #{@mail} <<EOF
+  `/usr/sbin/sendmail -f #{SENDER} #{@mail} <<EOF
 #{text}
 EOF`
 end
