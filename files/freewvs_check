@@ -7,10 +7,10 @@ load "/etc/freewvs/freewvs_check.conf"
 
 db_file = "/var/local/freewvs_check.db"
 
-if File.exists?(db_file)
-  db = YAML::load(File.read(db_file))
+db = if File.exists?(db_file)
+  YAML.load_file(db_file) || {}
 else
-  db = {}
+  {}
 end
 
 
