@@ -5,6 +5,8 @@ require 'yaml'
 
 load "/etc/freewvs/freewvs_check.conf"
 
+debug = ARGV[0] == '--debug'
+
 db_file = "/var/local/freewvs_check.db"
 
 db = if File.exists?(db_file)
@@ -42,7 +44,7 @@ end
 template = File.read('/etc/freewvs/freewvs_check.erb')
 
 entries.each do |host,folders|
-  if db[host]
+  if db[host] && !debug
     if (db[host][:lastreport] && Time.now - db[host][:lastreport] < REPORT_TIME) &&
        (db[host][:reportsize] && db[host][:reportsize] == folders.size)
       next
@@ -68,11 +70,17 @@ entries.each do |host,folders|
   renderer = ERB.new(template)
   text     = renderer.result()
 
-  `/usr/sbin/sendmail -f #{SENDER} #{@mail} <<EOF
+  if debug
+    puts "#{@mail} - #{@host} - #{@folders.keys.join(', ')}"
+  else
+    `/usr/sbin/sendmail -f #{SENDER} #{@mail} <<EOF
 #{text}
 EOF`
+  end
 end
 
-f = File.open(db_file,'w',0600)
-f.write(db.to_yaml)
-f.close
+unless debug
+  f = File.open(db_file,'w',0600)
+  f.write(db.to_yaml)
+  f.close
+end
