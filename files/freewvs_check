@@ -19,7 +19,7 @@ DIR = File.dirname(__FILE__)
 result = `#{DIR}/freewvs/freewvs -x /var/www/vhosts/`
 entries = {}
 
-begin
+while result =~ /<app/
   result =~ /<app state="vulnerable">(.+?)<\/app>(.*)/m
   entry  = $1
   result = $2
@@ -37,7 +37,7 @@ begin
   entries[host][dir][:safe_version] = $1
   entry  =~ /<vulninfo>(.+)<\/vulninfo>/
   entries[host][dir][:cve] = $1
-end while result =~ /<app/
+end
 
 template = File.read('/etc/freewvs/freewvs_check.erb')
 
