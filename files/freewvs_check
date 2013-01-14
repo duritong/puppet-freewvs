@@ -5,7 +5,7 @@ require 'yaml'
 
 DIR = File.dirname(__FILE__)
 
-debug    = ARGV[0] == '--debug'
+DEBUG    = ARGV[0] == '--debug'
 DB_FILE  = "/var/local/freewvs_check.db"
 CONF_DIR = '/etc/freewvs'
 
@@ -30,7 +30,7 @@ def scan_dir( dir )
 end
 
 def parse_result(result)
-  vhost_depth = 1 + VHOSTS.split("/").size
+  vhost_depth = VHOSTS.split("/").size
   entries = {}
   while result =~ /<app/
     result =~ /<app state="vulnerable">(.+?)<\/app>(.*)/m
@@ -51,13 +51,14 @@ def parse_result(result)
     entry  =~ /<vulninfo>(.+)<\/vulninfo>/
     entries[host][dir][:cve] = $1
   end
+  entries
 end
 
-def report(entries)
+def report(entries, db)
   template = File.read("#{CONF_DIR}/freewvs_check.erb")
   
   entries.each do |host,folders|
-    if db[host] && !debug
+    if db[host] && !DEBUG
       if (db[host][:lastreport] &&                                        # host already reported
           Time.now - db[host][:lastreport] < REPORT_TIME*86400) &&        # report was recently
          (db[host][:reportsize] && db[host][:reportsize] == folders.size) # unchanged number of issues
@@ -76,7 +77,8 @@ def report(entries)
 
     domain = FOLDER2DOMAIN.call(host)
     if SUBDOMAIN_MAPPING 
-      if hostparts = host.split(".") >= 2
+      hostparts = host.split(".")
+      if hostparts.size >= 2
         domain = hostparts[-2..-1].join(".")
       end
     end
@@ -85,12 +87,13 @@ def report(entries)
     renderer = ERB.new(template)
     text     = renderer.result()
   
-    if debug
+    if DEBUG
       puts "#{@mail} - #{@host} - #{@folders.keys.join(', ')}"
     else
       `/usr/sbin/sendmail -f #{SENDER} #{@mail} <<EOF\n#{text}\nEOF`
     end
   end
+  db
 end
 
 
@@ -98,6 +101,6 @@ db = load_db
 
 result  = scan_dir(VHOSTS)
 entries = parse_result(result)
-report(entries)
+db      = report(entries, db)
 
-save_db(db) unless debug
+save_db(db) unless DEBUG
