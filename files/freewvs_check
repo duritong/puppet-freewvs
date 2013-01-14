@@ -3,84 +3,101 @@
 require 'erb'
 require 'yaml'
 
-load "/etc/freewvs/freewvs_check.conf"
-
-debug = ARGV[0] == '--debug'
-
-db_file = "/var/local/freewvs_check.db"
-
-db = if File.exists?(db_file)
-  YAML.load_file(db_file) || {}
-else
-  {}
-end
-
-
 DIR = File.dirname(__FILE__)
 
-result = `#{DIR}/freewvs/freewvs -x /var/www/vhosts/`
-entries = {}
+debug    = ARGV[0] == '--debug'
+DB_FILE  = "/var/local/freewvs_check.db"
+CONF_DIR = '/etc/freewvs'
 
-while result =~ /<app/
-  result =~ /<app state="vulnerable">(.+?)<\/app>(.*)/m
-  entry  = $1
-  result = $2
-  entry  =~ /<directory>(.+)<\/directory>/
-  dir    = $1
-  host   = dir.split("/")[4]
-  dir   = dir.split("/")[5..-1].join("/")
-  entries[host]    ||= {}
-  entries[host][dir] = {}
-  entry  =~ /<appname>(.+)<\/appname>/
-  entries[host][dir][:app] = $1
-  entry  =~ /<version>(.+)<\/version>/
-  entries[host][dir][:version] = $1
-  entry  =~ /<safeversion>(.+)<\/safeversion>/
-  entries[host][dir][:safe_version] = $1
-  entry  =~ /<vulninfo>(.+)<\/vulninfo>/
-  entries[host][dir][:cve] = $1
-end
+load "#{CONF_DIR}/freewvs_check.conf"
 
-template = File.read('/etc/freewvs/freewvs_check.erb')
-
-entries.each do |host,folders|
-  if db[host] && !debug
-    if (db[host][:lastreport] && Time.now - db[host][:lastreport] < REPORT_TIME) &&
-       (db[host][:reportsize] && db[host][:reportsize] == folders.size)
-      next
-    end
-  end
-
-  db[host] ||= {}
-  db[host][:lastreport] = Time.now
-  db[host][:reportsize] = folders.size
-
-  @host    = host
-  @folders = folders
-
-  domain   = MAILMAPPING[host]
-  hostpart = host.split(".")
-  if hostpart.size > 1
-    domain ||= hostpart[-2..-1].join(".")
+def load_db
+  if File.exists?(DB_FILE)
+    YAML.load_file(DB_FILE) || {}
   else
-    domain ||= host
-  end
-  @mail    = "security@#{domain}"
-  
-  renderer = ERB.new(template)
-  text     = renderer.result()
-
-  if debug
-    puts "#{@mail} - #{@host} - #{@folders.keys.join(', ')}"
-  else
-    `/usr/sbin/sendmail -f #{SENDER} #{@mail} <<EOF
-#{text}
-EOF`
+    {}
   end
 end
 
-unless debug
-  f = File.open(db_file,'w',0600)
+def save_db(db)
+  f = File.open(DB_FILE,'w',0600)
   f.write(db.to_yaml)
   f.close
 end
+
+def scan_dir( dir )
+  `#{DIR}/freewvs/freewvs -x #{dir}`
+end
+
+def parse_result(result)
+  vhost_depth = 1 + VHOSTS.split("/").size
+  entries = {}
+  while result =~ /<app/
+    result =~ /<app state="vulnerable">(.+?)<\/app>(.*)/m
+    entry  = $1
+    result = $2
+    entry  =~ /<directory>(.+)<\/directory>/
+    dir    = $1
+    host   = dir.split("/")[vhost_depth]
+    dir    = dir.split("/")[vhost_depth+1..-1].join("/")
+    entries[host]    ||= {}
+    entries[host][dir] = {}
+    entry  =~ /<appname>(.+)<\/appname>/
+    entries[host][dir][:app] = $1
+    entry  =~ /<version>(.+)<\/version>/
+    entries[host][dir][:version] = $1
+    entry  =~ /<safeversion>(.+)<\/safeversion>/
+    entries[host][dir][:safe_version] = $1
+    entry  =~ /<vulninfo>(.+)<\/vulninfo>/
+    entries[host][dir][:cve] = $1
+  end
+end
+
+def report(entries)
+  template = File.read("#{CONF_DIR}/freewvs_check.erb")
+  
+  entries.each do |host,folders|
+    if db[host] && !debug
+      if (db[host][:lastreport] &&                                        # host already reported
+          Time.now - db[host][:lastreport] < REPORT_TIME*86400) &&        # report was recently
+         (db[host][:reportsize] && db[host][:reportsize] == folders.size) # unchanged number of issues
+        next
+      end
+    end
+  
+    db[host] ||= {}
+    db[host][:lastreport] = Time.now
+    db[host][:reportsize] = folders.size
+  
+    @host    = host
+    @folders = folders
+  
+    next if IGNORE.include?(@host)
+
+    domain = FOLDER2DOMAIN.call(host)
+    if SUBDOMAIN_MAPPING 
+      if hostparts = host.split(".") >= 2
+        domain = hostparts[-2..-1].join(".")
+      end
+    end
+    @mail    = RECEIVER.call(domain)
+    
+    renderer = ERB.new(template)
+    text     = renderer.result()
+  
+    if debug
+      puts "#{@mail} - #{@host} - #{@folders.keys.join(', ')}"
+    else
+      `/usr/sbin/sendmail -f #{SENDER} #{@mail} <<EOF\n#{text}\nEOF`
+    end
+  end
+end
+
+
+db = load_db
+
+result  = scan_dir(VHOSTS)
+entries = parse_result(result)
+report(entries)
+
+save_db(db) unless debug
