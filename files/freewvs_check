@@ -11,6 +11,8 @@ CONF_DIR = '/etc/freewvs'
 
 load "#{CONF_DIR}/freewvs_check.conf"
 
+`cd #{DIR}/freewvs && git pull -q`
+
 def load_db
   if File.exists?(DB_FILE)
     YAML.load_file(DB_FILE) || {}
