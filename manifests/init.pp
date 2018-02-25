@@ -2,7 +2,7 @@
 # https://wiki.schokokeks.org/Freewvs
 class freewvs(
   $install_location = '/var/local',
-  $repo             = 'git://git.immerda.ch/ifreewvs',
+  $repo             = 'https://git.schokokeks.org/git/freewvs.git',
   $config_src       = 'puppet:///modules/freewvs/freewvs_check.conf',
   $template_src     = 'puppet:///modules/freewvs/freewvs_check.erb'
 ){
