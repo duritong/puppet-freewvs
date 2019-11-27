@@ -6,6 +6,10 @@ class freewvs(
   $config_src       = 'puppet:///modules/freewvs/freewvs_check.conf',
   $template_src     = 'puppet:///modules/freewvs/freewvs_check.erb'
 ){
+  if versioncmp($facts['os']['release']['major'],'7') <= 0 {
+    ensure_packages(['python3'])
+    Package['python3'] -> Git::Clone['git_clone_freewvs']
+  }
   git::clone{'git_clone_freewvs':
     git_repo        => $repo,
     projectroot     => "${install_location}/freewvs",
