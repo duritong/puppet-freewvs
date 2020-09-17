@@ -58,7 +58,7 @@ end
 
 def report(entries, db)
   template = File.read("#{CONF_DIR}/freewvs_check.erb")
-  
+
   entries.each do |host,folders|
     if db[host] && !DEBUG
       if (db[host][:lastreport] &&                                        # host already reported
@@ -67,28 +67,28 @@ def report(entries, db)
         next
       end
     end
-  
+
     db[host] ||= {}
     db[host][:lastreport] = Time.now
     db[host][:reportsize] = folders.size
-  
+
     @host    = host
     @folders = folders
-  
+
     next if IGNORE.include?(@host)
 
     domain = FOLDER2DOMAIN.call(host)
-    if SUBDOMAIN_MAPPING 
+    if SUBDOMAIN_MAPPING
       hostparts = host.split(".")
       if hostparts.size >= 2
         domain = hostparts[-2..-1].join(".")
       end
     end
     @mail    = RECEIVER.call(domain)
-    
+
     renderer = ERB.new(template)
     text     = renderer.result()
-  
+
     if DEBUG
       puts "#{@mail} - #{@host} - #{@folders.keys.join(', ')}"
     else
